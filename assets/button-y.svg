@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" width="211.04" height="211.04" viewBox="0 0 211.04 211.04">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #231f20;
+      }
+
+      .cls-2 {
+        fill: #fff100;
+      }
+
+      .cls-3 {
+        fill: #eddb00;
+      }
+
+      .cls-4 {
+        fill: #d7c700;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g>
+      <rect class="cls-4" x="30.91" y="30.91" width="149.23" height="149.23" transform="translate(-43.71 105.52) rotate(-45)"/>
+      <g>
+        <polygon class="cls-2" points="205.74 105.52 105.52 205.74 105.52 105.52 205.74 105.52"/>
+        <polygon class="cls-3" points="205.74 105.52 105.52 105.52 105.52 5.3 205.74 105.52"/>
+        <polygon class="cls-2" points="105.52 5.3 105.52 105.52 5.3 105.52 105.52 5.3"/>
+        <polygon class="cls-3" points="105.52 105.52 105.52 205.74 5.3 105.52 105.52 105.52"/>
+      </g>
+      <g>
+        <polygon class="cls-2" points="105.52 155.63 55.41 105.52 105.52 105.52 105.52 155.63"/>
+        <polygon class="cls-3" points="105.52 155.63 105.52 105.52 155.63 105.52 105.52 155.63"/>
+        <polygon class="cls-2" points="155.63 105.52 105.52 105.52 105.52 55.41 155.63 105.52"/>
+        <polygon class="cls-3" points="105.52 105.52 55.41 105.52 105.52 55.41 105.52 105.52"/>
+      </g>
+      <path class="cls-1" d="M121.43,66.03h19.97l-27.42,43.44v35.54h-16.92v-35.54l-27.42-43.44h19.97l15.91,25.05,15.91-25.05Z"/>
+    </g>
+  </g>
+</svg>
