@@ -11,23 +11,22 @@
             background: #111111; color: #ffffff; font-family: sans-serif; overflow: hidden; 
         }
         
-        /* HUD - White Text */
         #hud { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 130px;
+            position: absolute; top: 0; left: 0; width: 100%; height: 140px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 10px; background: transparent; z-index: 10;
         }
-        #stats { width: 100%; max-width: 400px; display: flex; justify-content: space-between; font-weight: 900; color: #ffffff; }
+        #stats { width: 100%; max-width: 400px; display: flex; justify-content: space-between; font-weight: 900; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         
-        /* Ticket Box - Glassmorphism style for dark mode */
+        /* Ticket Box - 90% Solid White */
         #job-preview { 
-            height: 65px; display: flex; align-items: center; justify-content: center;
-            gap: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; 
-            padding: 5px 25px; min-width: 150px; margin-top: 10px;
+            height: 70px; display: flex; align-items: center; justify-content: center;
+            gap: 12px; background: rgba(255,255,255,0.9); border-radius: 12px; 
+            padding: 5px 25px; min-width: 160px; margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
-        .ticket-img { height: 40px; width: auto; } 
+        .ticket-img { height: 42px; width: auto; } 
 
-        /* Controls */
         #controls-wrapper {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 320px;
             display: flex; align-items: center; justify-content: center; background: transparent; z-index: 10;
@@ -63,10 +62,10 @@
 
     <div id="controls-wrapper">
         <div id="controls">
-            <div class="btn y" onmousedown="handleInput('Y')" ontouchstart="handleInput('Y')"></div>
-            <div class="btn c" onmousedown="handleInput('C')" ontouchstart="handleInput('C')"></div>
-            <div class="btn m" onmousedown="handleInput('M')" ontouchstart="handleInput('M')"></div>
-            <div class="btn k" onmousedown="handleInput('K')" ontouchstart="handleInput('K')"></div>
+            <div class="btn y" onmousedown="btnDown('Y')" onmouseup="btnUp('Y')" ontouchstart="btnDown('Y')" ontouchend="btnUp('Y')"></div>
+            <div class="btn c" onmousedown="btnDown('C')" onmouseup="btnUp('C')" ontouchstart="btnDown('C')" ontouchend="btnUp('C')"></div>
+            <div class="btn m" onmousedown="btnDown('M')" onmouseup="btnUp('M')" ontouchstart="btnDown('M')" ontouchend="btnUp('M')"></div>
+            <div class="btn k" onmousedown="btnDown('K')" onmouseup="btnUp('K')" ontouchstart="btnDown('K')" ontouchend="btnUp('K')"></div>
         </div>
     </div>
 
@@ -92,28 +91,38 @@
 
     assetList.forEach(name => { assets[name] = new Image(); assets[name].src = `assets/${name}.svg`; });
 
-    function handleInput(key) {
+    // Improved Input Handling
+    function btnDown(key) {
         event.preventDefault();
         activeKeys.add(key);
         
+        // Single Taps & Rapid Taps checked immediately on press
         const needleX = canvas.width / 2;
-        const trackY = canvas.height / 2;
-
         const currentItem = items.find(i => {
             const img = assets[`${i.id}-base`];
             const w = i.h * (img.width / img.height);
             const center = i.x + w/2;
-            return center > needleX - 70 && center < needleX + 70 && !i.processed;
+            return center > needleX - 80 && center < needleX + 80 && !i.processed;
         });
 
-        // Fixed Rush Logic: Requires 3 distinct taps
-        if (currentItem && currentItem.mech === 'rapid' && key === currentItem.col1) {
-            currentItem.progress += 34; 
-            if (currentItem.progress >= 100) success(currentItem);
-            updateTicketUI();
+        if (currentItem && !currentItem.hit) {
+            if (currentItem.mech === 'rapid' && key === currentItem.col1) {
+                currentItem.progress += 34; 
+                if (currentItem.progress >= 100) success(currentItem);
+                updateTicketUI();
+            } else if (currentItem.mech === 'tap' && key === currentItem.col1) {
+                success(currentItem);
+            } else if (currentItem.mech === 'chord') {
+                if (activeKeys.has(currentItem.col1) && activeKeys.has(currentItem.col2)) {
+                    success(currentItem);
+                }
+            }
         }
-        
-        setTimeout(() => activeKeys.delete(key), 50);
+    }
+
+    function btnUp(key) {
+        event.preventDefault();
+        activeKeys.delete(key);
     }
 
     function init() {
@@ -130,8 +139,8 @@
     function spawn() {
         if(!gameActive) return;
         const types = [
-            { id: 'polo', mech: 'tap', h: 80 }, { id: 'banner', mech: 'hold', h: 60 },
-            { id: 'sign', mech: 'chord', h: 100 }, { id: 'mug', mech: 'rapid', h: 70 }
+            { id: 'polo', mech: 'tap', h: 85 }, { id: 'banner', mech: 'hold', h: 65 },
+            { id: 'sign', mech: 'chord', h: 105 }, { id: 'mug', mech: 'rapid', h: 75 }
         ];
         const t = types[Math.floor(Math.random() * types.length)];
         const colors = ['C', 'M', 'Y', 'K'];
@@ -181,19 +190,29 @@
         if(!gameActive) return;
         ctx.clearRect(0,0,canvas.width,canvas.height);
         
-        // Background stretched to fill rectangular canvas
+        // Background: Proportional Scale to Cover
         if (assets.background.complete) {
-            ctx.drawImage(assets.background, 0, 0, canvas.width, canvas.height);
+            const img = assets.background;
+            const screenRatio = canvas.width / canvas.height;
+            const imgRatio = img.width / img.height;
+            let drawW, drawH, drawX, drawY;
+
+            if (screenRatio > imgRatio) {
+                drawW = canvas.width;
+                drawH = canvas.width / imgRatio;
+                drawX = 0;
+                drawY = (canvas.height - drawH) / 2;
+            } else {
+                drawW = canvas.height * imgRatio;
+                drawH = canvas.height;
+                drawX = (canvas.width - drawW) / 2;
+                drawY = 0;
+            }
+            ctx.drawImage(img, drawX, drawY, drawW, drawH);
         }
 
         const needleX = canvas.width/2;
         const trackY = canvas.height/2;
-
-        // Visual "Landing Strip"
-        ctx.strokeStyle = "rgba(255,255,255,0.08)";
-        ctx.setLineDash([10, 5]);
-        ctx.strokeRect(needleX - 65, trackY - 80, 130, 160);
-        ctx.setLineDash([]);
 
         items.forEach(item => {
             item.x += speed;
@@ -203,17 +222,17 @@
                 ctx.drawImage(img, item.x, item.y, w, item.h);
                 
                 const center = item.x + w/2;
-                const inZone = center > needleX - 65 && center < needleX + 65;
+                const inZone = center > needleX - 85 && center < needleX + 85;
 
-                if(inZone && !item.processed) {
-                    if(item.mech === 'tap' && activeKeys.has(item.col1)) success(item);
-                    if(item.mech === 'chord' && activeKeys.has(item.col1) && activeKeys.has(item.col2)) success(item);
-                    if(item.mech === 'hold' && activeKeys.has(item.col1)) { 
-                        item.progress += 3.5; 
-                        if(item.progress >= 100) success(item); 
+                // Hold Logic - Continuous check
+                if (inZone && !item.hit && item.mech === 'hold') {
+                    if (activeKeys.has(item.col1)) {
+                        item.progress += 2.5; // Progress fills while held
+                        if (item.progress >= 100) success(item);
                     }
                 }
-                if(item.x > needleX + 70 && !item.hit && !item.processed) { item.processed = true; fail(); }
+
+                if(item.x > needleX + 85 && !item.hit && !item.processed) { item.processed = true; fail(); }
             }
         });
         items = items.filter(i => i.x < canvas.width + 100);
@@ -231,7 +250,7 @@
     function fail() {
         combo = 0; lives--; updateLivesUI();
         document.getElementById('mult').innerText = "1x";
-        if(lives <= 0) { gameActive = false; document.getElementById('overlay').style.display='flex'; document.getElementById('final-score').innerText = "UNITS BRANDED: " + score; }
+        if(lives <= 0) { gameActive = false; document.getElementById('overlay').style.display='flex'; document.getElementById('final-score').innerText = "TOTAL BRANDED: " + score; }
         updateTicketUI();
     }
 
