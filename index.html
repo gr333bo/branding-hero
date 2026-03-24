@@ -11,7 +11,6 @@
             background: #fff; font-family: sans-serif; overflow: hidden; 
         }
         
-        /* Fixed HUD Height */
         #hud { 
             position: absolute; top: 0; left: 0; width: 100%; height: 130px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -19,15 +18,13 @@
         }
         #stats { width: 100%; max-width: 400px; display: flex; justify-content: space-between; font-weight: 900; margin-bottom: 8px; }
         
-        /* The Ticket Box - All icons will have same vertical height */
         #job-preview { 
             height: 65px; display: flex; align-items: center; justify-content: center;
             gap: 12px; background: #fafafa; border: 2px solid #eee; border-radius: 12px; 
             padding: 5px 25px; min-width: 150px;
         }
-        .ticket-img { height: 40px; width: auto; } /* Fixed vertical space */
+        .ticket-img { height: 40px; width: auto; } 
 
-        /* Fixed Controls Height */
         #controls-wrapper {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 320px;
             display: flex; align-items: center; justify-content: center; background: #fff; z-index: 10;
@@ -39,7 +36,6 @@
         .m { top: 90px; right: 0; background-image: url('assets/button-m.svg'); }
         .k { bottom: 0; left: 90px; background-image: url('assets/button-k.svg'); }
 
-        /* Flexible Game Canvas */
         canvas { position: absolute; top: 130px; left: 0; width: 100%; height: calc(100% - 450px); background: #fff; }
 
         #overlay { display: none; position: fixed; inset: 0; background: #fff; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
@@ -129,15 +125,12 @@
         const next = items.find(i => !i.hit && !i.processed);
         if(!next) return;
 
-        // Logic for which icons to show in the Ticket Box
         if(next.mech === 'hold') {
-            // Use the "Long" assets for Hold mechanics
             const img = document.createElement('img');
             img.src = `assets/long-${next.col1.toLowerCase()}.svg`;
             img.className = 'ticket-img';
             area.appendChild(img);
         } else if(next.mech === 'chord') {
-            // Tap both icons side-by-side
             [next.col1, next.col2].forEach(col => {
                 const img = document.createElement('img');
                 img.src = `assets/button-${col.toLowerCase()}.svg`;
@@ -145,7 +138,6 @@
                 area.appendChild(img);
             });
         } else if(next.mech === 'rapid') {
-            // Show three icons for Rapid/Rush mechanic
             for(let i=0; i<3; i++) {
                 const img = document.createElement('img');
                 img.src = `assets/button-${next.col1.toLowerCase()}.svg`;
@@ -153,7 +145,6 @@
                 area.appendChild(img);
             }
         } else {
-            // Single tap
             const img = document.createElement('img');
             img.src = `assets/button-${next.col1.toLowerCase()}.svg`;
             img.className = 'ticket-img';
@@ -165,7 +156,6 @@
         if(!gameActive) return;
         ctx.clearRect(0,0,canvas.width,canvas.height);
         const needleX = canvas.width/2;
-
         ctx.fillStyle = "#fafafa";
         ctx.fillRect(0, (canvas.height/2)-55, canvas.width, 110);
 
@@ -175,7 +165,6 @@
             if(img.complete) {
                 const w = item.h * (img.width/img.height);
                 ctx.drawImage(img, item.x, item.y, w, item.h);
-                
                 const center = item.x + w/2;
                 if(center > needleX - 50 && center < needleX + 50 && !item.processed) {
                     if(item.mech === 'tap' && activeKeys.has(item.col1)) success(item);
