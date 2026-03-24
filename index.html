@@ -18,10 +18,9 @@
         }
         #stats { width: 100%; max-width: 400px; display: flex; justify-content: space-between; font-weight: 900; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         
-        /* Ticket Box - 90% Solid White */
         #job-preview { 
             height: 70px; display: flex; align-items: center; justify-content: center;
-            gap: 12px; background: rgba(255,255,255,0.9); border-radius: 12px; 
+            gap: 12px; background: rgba(255,255,255,0.6); border-radius: 12px; 
             padding: 5px 25px; min-width: 160px; margin-top: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
@@ -79,51 +78,38 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const assets = {};
-    const assetList = [
-        'polo-base', 'polo-branded', 'banner-base', 'banner-branded', 
-        'sign-base', 'sign-branded', 'mug-base', 'mug-branded', 
-        'heart-active', 'heart-inactive', 'background',
-        'button-c', 'button-m', 'button-y', 'button-k',
-        'long-c', 'long-m', 'long-y', 'long-k'
-    ];
+    const assetList = ['polo-base', 'polo-branded', 'banner-base', 'banner-branded', 'sign-base', 'sign-branded', 'mug-base', 'mug-branded', 'heart-active', 'heart-inactive', 'background', 'button-c', 'button-m', 'button-y', 'button-k', 'long-c', 'long-m', 'long-y', 'long-k'];
     
     let score = 0, combo = 0, lives = 3, gameActive = false, speed = 2.5, items = [], activeKeys = new Set();
+    
+    // New dynamic centering constants
+    const hudHeight = 140;
+    const controlsHeight = 320;
 
     assetList.forEach(name => { assets[name] = new Image(); assets[name].src = `assets/${name}.svg`; });
 
-    // Improved Input Handling
     function btnDown(key) {
         event.preventDefault();
         activeKeys.add(key);
-        
-        // Single Taps & Rapid Taps checked immediately on press
         const needleX = canvas.width / 2;
         const currentItem = items.find(i => {
             const img = assets[`${i.id}-base`];
             const w = i.h * (img.width / img.height);
             const center = i.x + w/2;
-            return center > needleX - 80 && center < needleX + 80 && !i.processed;
+            return center > needleX - 85 && center < needleX + 85 && !i.processed;
         });
-
         if (currentItem && !currentItem.hit) {
             if (currentItem.mech === 'rapid' && key === currentItem.col1) {
-                currentItem.progress += 34; 
-                if (currentItem.progress >= 100) success(currentItem);
-                updateTicketUI();
+                currentItem.progress += 34; if (currentItem.progress >= 100) success(currentItem); updateTicketUI();
             } else if (currentItem.mech === 'tap' && key === currentItem.col1) {
                 success(currentItem);
             } else if (currentItem.mech === 'chord') {
-                if (activeKeys.has(currentItem.col1) && activeKeys.has(currentItem.col2)) {
-                    success(currentItem);
-                }
+                if (activeKeys.has(currentItem.col1) && activeKeys.has(currentItem.col2)) success(currentItem);
             }
         }
     }
 
-    function btnUp(key) {
-        event.preventDefault();
-        activeKeys.delete(key);
-    }
+    function btnUp(key) { event.preventDefault(); activeKeys.delete(key); }
 
     function init() {
         canvas.width = window.innerWidth;
@@ -133,7 +119,6 @@
         spawn();
         draw();
     }
-
     setTimeout(init, 300);
 
     function spawn() {
@@ -147,7 +132,11 @@
         let c1 = colors[Math.floor(Math.random()*4)], c2 = colors[Math.floor(Math.random()*4)];
         while(c1 === c2) c2 = colors[Math.floor(Math.random()*4)];
 
-        items.push({ ...t, x: -350, y: (canvas.height/2) - (t.h/2), col1: c1, col2: c2, progress: 0, hit: false, processed: false });
+        // Calculate the center of the available space between HUD and Controls
+        const availableSpace = canvas.height - hudHeight - controlsHeight;
+        const trackY = hudHeight + (availableSpace / 2);
+
+        items.push({ ...t, x: -350, y: trackY - (t.h/2), col1: c1, col2: c2, progress: 0, hit: false, processed: false });
         updateTicketUI();
         setTimeout(spawn, Math.max(1000, 3000 - (score * 1.5)));
     }
@@ -157,32 +146,19 @@
         area.innerHTML = '';
         const next = items.find(i => !i.hit && !i.processed);
         if(!next) return;
-
         if(next.mech === 'hold') {
-            const img = document.createElement('img');
-            img.src = `assets/long-${next.col1.toLowerCase()}.svg`;
-            img.className = 'ticket-img';
-            area.appendChild(img);
+            const img = document.createElement('img'); img.src = `assets/long-${next.col1.toLowerCase()}.svg`; img.className = 'ticket-img'; area.appendChild(img);
         } else if(next.mech === 'chord') {
             [next.col1, next.col2].forEach(col => {
-                const img = document.createElement('img');
-                img.src = `assets/button-${col.toLowerCase()}.svg`;
-                img.className = 'ticket-img';
-                area.appendChild(img);
+                const img = document.createElement('img'); img.src = `assets/button-${col.toLowerCase()}.svg`; img.className = 'ticket-img'; area.appendChild(img);
             });
         } else if(next.mech === 'rapid') {
             const remaining = 3 - Math.floor(next.progress / 33.4);
             for(let i=0; i < Math.max(0, remaining); i++) {
-                const img = document.createElement('img');
-                img.src = `assets/button-${next.col1.toLowerCase()}.svg`;
-                img.className = 'ticket-img';
-                area.appendChild(img);
+                const img = document.createElement('img'); img.src = `assets/button-${next.col1.toLowerCase()}.svg`; img.className = 'ticket-img'; area.appendChild(img);
             }
         } else {
-            const img = document.createElement('img');
-            img.src = `assets/button-${next.col1.toLowerCase()}.svg`;
-            img.className = 'ticket-img';
-            area.appendChild(img);
+            const img = document.createElement('img'); img.src = `assets/button-${next.col1.toLowerCase()}.svg`; img.className = 'ticket-img'; area.appendChild(img);
         }
     }
 
@@ -190,29 +166,24 @@
         if(!gameActive) return;
         ctx.clearRect(0,0,canvas.width,canvas.height);
         
-        // Background: Proportional Scale to Cover
         if (assets.background.complete) {
             const img = assets.background;
-            const screenRatio = canvas.width / canvas.height;
-            const imgRatio = img.width / img.height;
-            let drawW, drawH, drawX, drawY;
-
-            if (screenRatio > imgRatio) {
-                drawW = canvas.width;
-                drawH = canvas.width / imgRatio;
-                drawX = 0;
-                drawY = (canvas.height - drawH) / 2;
-            } else {
-                drawW = canvas.height * imgRatio;
-                drawH = canvas.height;
-                drawX = (canvas.width - drawW) / 2;
-                drawY = 0;
-            }
-            ctx.drawImage(img, drawX, drawY, drawW, drawH);
+            const sR = canvas.width / canvas.height, iR = img.width / img.height;
+            let dW, dH, dX, dY;
+            if (sR > iR) { dW = canvas.width; dH = canvas.width / iR; dX = 0; dY = (canvas.height - dH) / 2; }
+            else { dW = canvas.height * iR; dH = canvas.height; dX = (canvas.width - dW) / 2; dY = 0; }
+            ctx.drawImage(img, dX, dY, dW, dH);
         }
 
         const needleX = canvas.width/2;
-        const trackY = canvas.height/2;
+        const availableSpace = canvas.height - hudHeight - controlsHeight;
+        const trackY = hudHeight + (availableSpace / 2);
+
+        // Targeted "Hit Zone" indicator
+        ctx.strokeStyle = "rgba(255,255,255,0.15)";
+        ctx.setLineDash([10, 5]);
+        ctx.strokeRect(needleX - 85, trackY - 80, 170, 160);
+        ctx.setLineDash([]);
 
         items.forEach(item => {
             item.x += speed;
@@ -220,18 +191,11 @@
             if(img.complete) {
                 const w = item.h * (img.width/img.height);
                 ctx.drawImage(img, item.x, item.y, w, item.h);
-                
                 const center = item.x + w/2;
                 const inZone = center > needleX - 85 && center < needleX + 85;
-
-                // Hold Logic - Continuous check
-                if (inZone && !item.hit && item.mech === 'hold') {
-                    if (activeKeys.has(item.col1)) {
-                        item.progress += 2.5; // Progress fills while held
-                        if (item.progress >= 100) success(item);
-                    }
+                if (inZone && !item.hit && item.mech === 'hold' && activeKeys.has(item.col1)) {
+                    item.progress += 2.5; if (item.progress >= 100) success(item);
                 }
-
                 if(item.x > needleX + 85 && !item.hit && !item.processed) { item.processed = true; fail(); }
             }
         });
@@ -257,9 +221,7 @@
     function updateLivesUI() {
         const c = document.getElementById('lives-container'); c.innerHTML = '';
         for(let i=0; i<3; i++) {
-            const img = document.createElement('img');
-            img.src = i < lives ? 'assets/heart-active.svg' : 'assets/heart-inactive.svg';
-            img.className = 'heart'; c.appendChild(img);
+            const img = document.createElement('img'); img.src = i < lives ? 'assets/heart-active.svg' : 'assets/heart-inactive.svg'; img.className = 'heart'; c.appendChild(img);
         }
     }
 </script>
