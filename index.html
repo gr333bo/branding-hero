@@ -11,7 +11,6 @@
             background: #111111; color: #ffffff; font-family: sans-serif; overflow: hidden; 
         }
         
-        /* HUD - Hidden at start */
         #hud { 
             position: absolute; top: 0; left: 0; width: 100%; height: 140px;
             display: none; flex-direction: column; align-items: center; justify-content: center;
@@ -27,7 +26,6 @@
         }
         .ticket-img { height: 42px; width: auto; } 
 
-        /* Controls - Hidden at start */
         #controls-wrapper {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 320px;
             display: none; align-items: center; justify-content: center; background: transparent; z-index: 10;
@@ -55,7 +53,6 @@
             transition: transform 0.1s;
         }
         #play-btn:active { transform: scale(0.95); }
-
         #best-score { font-size: 14px; opacity: 0.7; margin-top: 15px; letter-spacing: 1px; }
     </style>
 </head>
@@ -73,10 +70,10 @@
 
     <div id="controls-wrapper">
         <div id="controls">
-            <div class="btn y" onmousedown="btnDown('Y')" onmouseup="btnUp('Y')" ontouchstart="btnDown('Y')" ontouchend="btnUp('Y')"></div>
-            <div class="btn c" onmousedown="btnDown('C')" onmouseup="btnUp('C')" ontouchstart="btnDown('C')" ontouchend="btnUp('C')"></div>
-            <div class="btn m" onmousedown="btnDown('M')" onmouseup="btnUp('M')" ontouchstart="btnDown('M')" ontouchend="btnUp('M')"></div>
-            <div class="btn k" onmousedown="btnDown('K')" onmouseup="btnUp('K')" ontouchstart="btnDown('K')" ontouchend="btnUp('K')"></div>
+            <div class="btn y" id="btn-y" onmousedown="btnDown('Y')" onmouseup="btnUp('Y')" ontouchstart="btnDown('Y')" ontouchend="btnUp('Y')"></div>
+            <div class="btn c" id="btn-c" onmousedown="btnDown('C')" onmouseup="btnUp('C')" ontouchstart="btnDown('C')" ontouchend="btnUp('C')"></div>
+            <div class="btn m" id="btn-m" onmousedown="btnDown('M')" onmouseup="btnUp('M')" ontouchstart="btnDown('M')" ontouchend="btnUp('M')"></div>
+            <div class="btn k" id="btn-k" onmousedown="btnDown('K')" onmouseup="btnUp('K')" ontouchstart="btnDown('K')" ontouchend="btnUp('K')"></div>
         </div>
     </div>
 
@@ -99,20 +96,42 @@
 
     assetList.forEach(name => { assets[name] = new Image(); assets[name].src = `assets/${name}.svg`; });
 
-    // High Score Logic
     let highScore = localStorage.getItem('brandingHeroBest') || 0;
     document.getElementById('best-score').innerText = highScore > 0 ? `BEST SESSION: ${highScore}` : "";
 
+    // Desktop Keyboard Mapping
+    const keyMap = {
+        'ArrowLeft': 'C',
+        'ArrowUp': 'M',
+        'ArrowRight': 'Y',
+        'ArrowDown': 'K'
+    };
+
+    window.addEventListener('keydown', (e) => {
+        if (keyMap[e.code] && !e.repeat) btnDown(keyMap[e.code]);
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (keyMap[e.code]) btnUp(keyMap[e.code]);
+    });
+
     function btnDown(key) {
-        event.preventDefault();
+        if (event) event.preventDefault();
         if (!gameActive) return;
+        
         activeKeys.add(key);
+        
+        // Visual feedback for desktop keys
+        const btn = document.getElementById(`btn-${key.toLowerCase()}`);
+        if(btn) btn.style.transform = 'scale(0.9)';
+
         const needleX = canvas.width / 2;
         const currentItem = items.find(i => {
             const img = assets[`${i.id}-base`];
             const w = i.h * (img.width / img.height);
             return (i.x + w/2) > needleX - 85 && (i.x + w/2) < needleX + 85 && !i.processed;
         });
+
         if (currentItem && !currentItem.hit) {
             if (currentItem.mech === 'rapid' && key === currentItem.col1) {
                 currentItem.progress += 34; if (currentItem.progress >= 100) success(currentItem); updateTicketUI();
@@ -124,7 +143,12 @@
         }
     }
 
-    function btnUp(key) { event.preventDefault(); activeKeys.delete(key); }
+    function btnUp(key) { 
+        if (event) event.preventDefault();
+        activeKeys.delete(key); 
+        const btn = document.getElementById(`btn-${key.toLowerCase()}`);
+        if(btn) btn.style.transform = 'scale(1)';
+    }
 
     function init() {
         canvas.width = window.innerWidth;
@@ -140,12 +164,9 @@
     }
 
     function startGame() {
-        // Toggle UI Layers
         document.getElementById('overlay').style.display = 'none';
         document.getElementById('hud').style.display = 'flex';
         document.getElementById('controls-wrapper').style.display = 'flex';
-        
-        // Reset Stats
         score = 0; combo = 0; lives = 3; items = []; speed = 2.5;
         document.getElementById('score').innerText = "0";
         document.getElementById('mult').innerText = "1x";
@@ -224,13 +245,7 @@
             document.getElementById('overlay').style.display = 'flex'; 
             document.getElementById('hud').style.display = 'none';
             document.getElementById('controls-wrapper').style.display = 'none';
-            
-            // Check High Score
-            if (score > highScore) {
-                highScore = score;
-                localStorage.setItem('brandingHeroBest', highScore);
-            }
-            
+            if (score > highScore) { highScore = score; localStorage.setItem('brandingHeroBest', highScore); }
             document.getElementById('final-score').innerText = "TOTAL BRANDED: " + score;
             document.getElementById('best-score').innerText = `BEST SESSION: ${highScore}`;
             document.getElementById('play-btn').innerText = "PLAY AGAIN";
