@@ -3,271 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Branding Hero: CMYK Edition</title>
+    <title>Branding Hero</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { 
-            margin: 0; 
-            background: #fff; 
-            font-family: 'Helvetica Neue', Arial, sans-serif; 
-            overflow: hidden; 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: space-between; /* This pushes HUD to top, Buttons to bottom */
-            padding: 10px 0 40px 0; 
+        html, body { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background: #fff; font-family: sans-serif; overflow: hidden; 
         }
         
-        /* HUD - Stays at Top */
+        /* Top Section: Fixed Height */
         #hud { 
-            width: 100%; 
-            max-width: 500px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            padding: 10px 20px;
+            position: absolute; top: 0; left: 0; width: 100%; height: 120px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 10px; background: #fff; z-index: 10;
         }
-        #stats { 
-            width: 100%; 
-            display: flex; 
-            justify-content: space-between; 
-            font-weight: 900; 
-            font-size: 18px; 
-            margin-bottom: 10px;
-        }
-        #job-preview { 
-            height: 65px; 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
-            background: #fafafa; 
-            border-radius: 12px; 
-            padding: 0 20px; 
-            border: 2px solid #eee;
-        }
-        .ticket-icon { height: 40px; }
+        #stats { width: 100%; max-width: 400px; display: flex; justify-content: space-between; font-weight: 900; }
+        #job-preview { height: 60px; display: flex; align-items: center; gap: 10px; background: #fafafa; border: 2px solid #eee; border-radius: 10px; padding: 0 15px; margin-top: 5px; }
 
-        /* Game Canvas - Centers itself */
-        canvas { 
-            background: #fff; 
-            width: 100%; 
-            max-width: 500px; 
-            touch-action: none;
-            flex-grow: 1; /* Takes up all available middle space */
+        /* Bottom Section: Fixed Height */
+        #controls-wrapper {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 300px;
+            display: flex; align-items: center; justify-content: center; background: #fff; z-index: 10;
         }
-        
-        /* Controls - Anchored at Bottom */
-        #controls { 
-            position: relative; 
-            width: 280px; 
-            height: 280px; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-        .btn { 
-            position: absolute; 
-            width: 100px; 
-            height: 100px; 
-            cursor: pointer; 
-            background-size: contain; 
-            background-repeat: no-repeat; 
-            border: none; 
-            outline: none; 
-        }
-        .btn:active { transform: scale(0.9); }
-        
-        /* Diamond Layout Positioning */
-        .y { top: 0; left: 90px; background-image: url('assets/button-y.svg'); }
-        .c { top: 90px; left: 0; background-image: url('assets/button-c.svg'); }
-        .m { top: 90px; right: 0; background-image: url('assets/button-m.svg'); }
-        .k { bottom: 0; left: 90px; background-image: url('assets/button-k.svg'); }
-        
-        #overlay { 
-            display: none; 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(255,255,255,0.98); 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 100; 
-            text-align: center; 
-        }
-        .heart { width: 25px; height: 25px; margin-left: 5px; }
+        #controls { position: relative; width: 280px; height: 280px; }
+        .btn { position: absolute; width: 95px; height: 95px; background-size: contain; background-repeat: no-repeat; cursor: pointer; }
+        .y { top: 0; left: 92px; background-image: url('assets/button-y.svg'); }
+        .c { top: 92px; left: 0; background-image: url('assets/button-c.svg'); }
+        .m { top: 92px; right: 0; background-image: url('assets/button-m.svg'); }
+        .k { bottom: 0; left: 92px; background-image: url('assets/button-k.svg'); }
+
+        /* Middle Section: The Game */
+        canvas { position: absolute; top: 120px; left: 0; width: 100%; height: calc(100% - 420px); background: #fff; }
+
+        #overlay { display: none; position: fixed; inset: 0; background: #fff; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
+        .ticket-icon { height: 35px; }
+        .heart { width: 22px; height: 22px; margin-left: 4px; }
     </style>
 </head>
 <body>
 
     <div id="hud">
         <div id="stats">
-            <div>SCORE: <span id="score">0</span> <span id="mult" style="color:#ffcc00; margin-left:5px;">1x</span></div>
+            <div>SCORE: <span id="score">0</span> <span id="mult" style="color:#ffcc00">1x</span></div>
             <div id="lives-container"></div>
         </div>
-        <div id="job-preview">
-            <span style="font-size: 10px; font-weight: 900; color: #bbb;">NEXT:</span>
-            <div id="ticket-area" style="display: flex; align-items: center; gap: 8px;"></div>
-        </div>
+        <div id="job-preview"><div id="ticket-area" style="display:flex; align-items:center; gap:8px;"></div></div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 
-    <div id="controls">
-        <div class="btn y" onmousedown="press('Y')" onmouseup="release('Y')" ontouchstart="press('Y')" ontouchend="release('Y')"></div>
-        <div class="btn c" onmousedown="press('C')" onmouseup="release('C')" ontouchstart="press('C')" ontouchend="release('C')"></div>
-        <div class="btn m" onmousedown="press('M')" onmouseup="release('M')" ontouchstart="press('M')" ontouchend="release('M')"></div>
-        <div class="btn k" onmousedown="press('K')" onmouseup="release('K')" ontouchstart="press('K')" ontouchend="release('K')"></div>
+    <div id="controls-wrapper">
+        <div id="controls">
+            <div class="btn y" onmousedown="press('Y')" ontouchstart="press('Y')"></div>
+            <div class="btn c" onmousedown="press('C')" ontouchstart="press('C')"></div>
+            <div class="btn m" onmousedown="press('M')" ontouchstart="press('M')"></div>
+            <div class="btn k" onmousedown="press('K')" ontouchstart="press('K')"></div>
+        </div>
     </div>
 
     <div id="overlay">
-        <img src="assets/branding-hero-logo.svg" style="width: 220px; margin-bottom: 20px;">
-        <h1>SHIFT COMPLETE</h1>
-        <p id="final-score" style="font-size: 32px; font-weight: 900;"></p>
-        <button onclick="location.reload()" style="background:#000; color:#fff; padding:20px 50px; border:none; border-radius:50px; font-weight:bold; font-size: 18px;">RESTART</button>
+        <img src="assets/branding-hero-logo.svg" style="width:200px; margin-bottom:20px;">
+        <h1 id="final-score"></h1>
+        <button onclick="location.reload()" style="background:#000; color:#fff; padding:15px 40px; border:none; border-radius:50px; font-weight:bold; font-size:18px;">RESTART</button>
     </div>
 
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    
-    function resize() {
-        canvas.width = window.innerWidth > 500 ? 500 : window.innerWidth;
-        // This calculates exactly how much room is left for the game
-        canvas.height = window.innerHeight - 450; 
-    }
-    window.onresize = resize;
-    resize();
-
     const assets = {};
-    const assetList = ['polo-base', 'polo-branded', 'banner-base', 'banner-branded', 'sign-base', 'sign-branded', 'mug-base', 'mug-branded', 'branding-hero-logo', 'heart-active', 'heart-inactive', 'button-c', 'button-m', 'button-y', 'button-k'];
+    const assetList = ['polo-base', 'polo-branded', 'banner-base', 'banner-branded', 'sign-base', 'sign-branded', 'mug-base', 'mug-branded', 'heart-active', 'heart-inactive', 'button-c', 'button-m', 'button-y', 'button-k'];
     
-    assetList.forEach(name => {
-        assets[name] = new Image();
-        assets[name].src = `assets/${name}.svg`;
-    });
+    let score = 0, combo = 0, lives = 3, gameActive = false, speed = 2.5, items = [], activeKeys = new Set();
 
-    let score = 0, combo = 0, lives = 3, gameActive = true, speed = 2.5;
-    let items = [];
-    let activeKeys = new Set();
-    const needleX = canvas.width / 2;
-    // TrackY is now dynamic based on canvas height
-    let trackY = canvas.height / 2;
+    assetList.forEach(name => { assets[name] = new Image(); assets[name].src = `assets/${name}.svg`; });
 
-    function press(key) { activeKeys.add(key); }
-    function release(key) { activeKeys.delete(key); }
+    function press(key) { activeKeys.add(key); event.preventDefault(); }
+    window.onmouseup = window.ontouchend = () => activeKeys.clear();
 
-    function updateLivesUI() {
-        const container = document.getElementById('lives-container');
-        container.innerHTML = '';
-        for(let i=0; i<3; i++) {
-            const img = document.createElement('img');
-            img.src = i < lives ? 'assets/heart-active.svg' : 'assets/heart-inactive.svg';
-            img.className = 'heart';
-            container.appendChild(img);
-        }
+    function init() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight - 420;
+        updateLivesUI();
+        gameActive = true;
+        spawn();
+        draw();
     }
+
+    // Wait 300ms for the iFrame to settle its dimensions
+    setTimeout(init, 300);
 
     function spawn() {
         if(!gameActive) return;
-        trackY = canvas.height / 2; // Keep track centered
         const types = [
-            { id: 'polo', mech: 'tap', displayH: 80 },
-            { id: 'banner', mech: 'hold', displayH: 60 },
-            { id: 'sign', mech: 'chord', displayH: 100 },
-            { id: 'mug', mech: 'rapid', displayH: 70 }
+            { id: 'polo', mech: 'tap', h: 80 }, { id: 'banner', mech: 'hold', h: 60 },
+            { id: 'sign', mech: 'chord', h: 100 }, { id: 'mug', mech: 'rapid', h: 70 }
         ];
-        const type = types[Math.floor(Math.random() * types.length)];
+        const t = types[Math.floor(Math.random() * types.length)];
         const colors = ['C', 'M', 'Y', 'K'];
-        let c1 = colors[Math.floor(Math.random() * 4)];
-        let c2 = colors[Math.floor(Math.random() * 4)];
-        while (type.mech === 'chord' && c1 === c2) { c2 = colors[Math.floor(Math.random() * 4)]; }
+        let c1 = colors[Math.floor(Math.random()*4)], c2 = colors[Math.floor(Math.random()*4)];
+        while(c1 === c2) c2 = colors[Math.floor(Math.random()*4)];
 
-        items.push({
-            ...type, x: -400, y: trackY - (type.displayH / 2),
-            col1: c1, col2: c2, progress: 0, hit: false, processed: false
-        });
+        items.push({ ...t, x: -300, y: (canvas.height/2) - (t.h/2), col1: c1, col2: c2, progress: 0, hit: false, processed: false });
         updateTicketUI();
         setTimeout(spawn, Math.max(1000, 3000 - (score * 1.5)));
     }
 
-    function updateTicketUI() {
-        const area = document.getElementById('ticket-area');
-        area.innerHTML = '';
-        const next = items.find(i => !i.hit && !i.processed);
-        if(next) {
-            const img1 = document.createElement('img');
-            img1.src = `assets/button-${next.col1.toLowerCase()}.svg`;
-            img1.className = 'ticket-icon';
-            area.appendChild(img1);
-            if(next.mech === 'chord') {
-                area.innerHTML += '<span style="font-weight:900">+</span>';
-                const img2 = document.createElement('img');
-                img2.src = `assets/button-${next.col2.toLowerCase()}.svg`;
-                img2.className = 'ticket-icon';
-                area.appendChild(img2);
-            }
-            if(next.mech === 'rapid') area.innerHTML += '<span style="font-weight:900; font-size:12px;">TAP FAST</span>';
-            if(next.mech === 'hold') area.innerHTML += '<span style="font-weight:900; font-size:12px;">HOLD</span>';
-        }
-    }
-
     function draw() {
         if(!gameActive) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        trackY = canvas.height / 2;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        const needleX = canvas.width/2;
 
+        // Visual conveyor track
         ctx.fillStyle = "#fafafa";
-        ctx.fillRect(0, trackY - 60, canvas.width, 120);
-
-        ctx.strokeStyle = "#eee";
-        ctx.setLineDash([8, 4]);
-        ctx.strokeRect(needleX - 60, trackY - 70, 120, 140);
-        ctx.setLineDash([]);
+        ctx.fillRect(0, (canvas.height/2)-50, canvas.width, 100);
 
         items.forEach(item => {
             item.x += speed;
-            const imgKey = item.hit ? `${item.id}-branded` : `${item.id}-base`;
-            const img = assets[imgKey];
-            if(img.complete && img.width > 0) {
-                const ratio = img.width / img.height;
-                const finalW = item.displayH * ratio;
-                ctx.drawImage(img, item.x, item.y, finalW, item.displayH);
-                const center = item.x + finalW/2;
-                const inZone = center > needleX - 60 && center < needleX + 60;
-
-                if(inZone && !item.processed) {
+            const img = assets[item.hit ? `${item.id}-branded` : `${item.id}-base`];
+            if(img.complete) {
+                const w = item.h * (img.width/img.height);
+                ctx.drawImage(img, item.x, item.y, w, item.h);
+                
+                const center = item.x + w/2;
+                if(center > needleX - 50 && center < needleX + 50 && !item.processed) {
                     if(item.mech === 'tap' && activeKeys.has(item.col1)) success(item);
                     if(item.mech === 'chord' && activeKeys.has(item.col1) && activeKeys.has(item.col2)) success(item);
-                    if(item.mech === 'hold' && activeKeys.has(item.col1)) { item.progress += 3.5; if(item.progress >= 100) success(item); }
-                    if(item.mech === 'rapid' && activeKeys.has(item.col1)) { item.progress += 15; if(item.progress >= 100) success(item); }
+                    if(item.mech === 'hold' && activeKeys.has(item.col1)) { item.progress += 4; if(item.progress >= 100) success(item); }
+                    if(item.mech === 'rapid' && activeKeys.has(item.col1)) { item.progress += 20; if(item.progress >= 100) success(item); }
                 }
-                if(item.x > needleX + 90 && !item.hit && !item.processed) { item.processed = true; fail(); }
+                if(item.x > needleX + 60 && !item.hit && !item.processed) { item.processed = true; fail(); }
             }
         });
-        items = items.filter(i => i.x < 600);
+        items = items.filter(i => i.x < canvas.width + 100);
         requestAnimationFrame(draw);
     }
 
     function success(item) {
         item.hit = true; item.processed = true;
-        combo++; 
-        let currentMult = Math.min(5, Math.floor(combo/5)+1);
-        score += (10 * currentMult);
+        combo++; score += (10 * Math.min(5, Math.floor(combo/5)+1));
         document.getElementById('score').innerText = score;
-        document.getElementById('mult').innerText = currentMult + "x";
+        document.getElementById('mult').innerText = Math.min(5, Math.floor(combo/5)+1) + "x";
         updateTicketUI();
     }
 
     function fail() {
         combo = 0; lives--; updateLivesUI();
         document.getElementById('mult').innerText = "1x";
+        if(lives <= 0) { gameActive = false; document.getElementById('overlay').style.display='flex'; document.getElementById('final-score').innerText = "SCORE: " + score; }
         updateTicketUI();
-        if(lives <= 0) { gameActive = false; document.getElementById('overlay').style.display = 'flex'; document.getElementById('final-score').innerText = "TOTAL BRANDED: " + score; }
     }
 
-    updateLivesUI(); spawn(); draw();
+    function updateLivesUI() {
+        const c = document.getElementById('lives-container'); c.innerHTML = '';
+        for(let i=0; i<3; i++) {
+            const img = document.createElement('img');
+            img.src = i < lives ? 'assets/heart-active.svg' : 'assets/heart-inactive.svg';
+            img.className = 'heart'; c.appendChild(img);
+        }
+    }
+
+    function updateTicketUI() {
+        const area = document.getElementById('ticket-area'); area.innerHTML = '';
+        const next = items.find(i => !i.hit && !i.processed);
+        if(next) {
+            const img1 = document.createElement('img'); img1.src = `assets/button-${next.col1.toLowerCase()}.svg`;
+            img1.className = 'ticket-icon'; area.appendChild(img1);
+            if(next.mech === 'chord') {
+                area.innerHTML += '<b>+</b>';
+                const img2 = document.createElement('img'); img2.src = `assets/button-${next.col2.toLowerCase()}.svg`;
+                img2.className = 'ticket-icon'; area.appendChild(img2);
+            }
+        }
+    }
 </script>
 </body>
 </html>
