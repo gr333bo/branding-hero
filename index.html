@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Branding Hero: CMYK Edition</title>
+    <style>
+        body { margin: 0; background: #fff; font-family: 'Helvetica Neue', Arial, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; align-items: center; }
+        #game-ui { width: 100%; max-width: 500px; display: flex; justify-content: space-between; padding: 20px; box-sizing: border-box; font-weight: 900; }
+        canvas { background: #fff; width: 100%; max-width: 500px; cursor: crosshair; touch-action: none; }
+        
+        /* Diamond Layout */
+        #controls { position: relative; width: 220px; height: 220px; margin-top: 20px; }
+        .btn { position: absolute; width: 70px; height: 70px; border: 3px solid #000; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px; cursor: pointer; user-select: none; transition: transform 0.05s; }
+        .btn:active { transform: scale(0.9); box-shadow: inset 0 0 10px rgba(0,0,0,0.2); }
+        
+        .c { top: 75px; left: 0; background: #00ffff; color: #000; transform: rotate(-45deg); }
+        .m { top: 75px; right: 0; background: #ff00ff; color: #fff; transform: rotate(-45deg); }
+        .y { top: 0; left: 75px; background: #ffff00; color: #000; transform: rotate(-45deg); }
+        .k { bottom: 0; left: 75px; background: #000000; color: #fff; transform: rotate(-45deg); }
+        
+        /* Text inside diamond needs to be rotated back to be readable */
+        .btn span { transform: rotate(45deg); display: block; }
+
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div id="game-ui">
+        <div>SCORE: <span id="score">0</span> <span id="mult" style="color:#ffcc00">1x</span></div>
+        <div id="lives">❤️❤️❤️</div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="controls">
+        <div class="btn y" onmousedown="press('Y')" onmouseup="release('Y')" ontouchstart="press('Y')" ontouchend="release('Y')"><span>Y</span></div>
+        <div class="btn c" onmousedown="press('C')" onmouseup="release('C')" ontouchstart="press('C')" ontouchend="release('C')"><span>C</span></div>
+        <div class="btn m" onmousedown="press('M')" onmouseup="release('M')" ontouchstart="press('M')" ontouchend="release('M')"><span>M</span></div>
+        <div class="btn k" onmousedown="press('K')" onmouseup="release('K')" ontouchstart="press('K')" ontouchend="release('K')"><span>K</span></div>
+    </div>
+
+    <div id="overlay">
+        <h1>SHIFT COMPLETE</h1>
+        <p id="final-score"></p>
+        <button onclick="location.reload()" style="background:#000; color:#fff; padding:15px 30px; border:none; border-radius:50px; font-weight:bold;">RESTART</button>
+    </div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 500; canvas.height = 400;
+
+    // --- ASSET PRELOADING ---
+    const assets = {};
+    const assetList = ['polo-base', 'polo-branded', 'banner-base', 'banner-branded', 'sign-base', 'sign-branded', 'mug-base', 'mug-branded'];
+    assetList.forEach(name => {
+        assets[name] = new Image();
+        assets[name].src = `assets/${name}.svg`;
+    });
+
+    let score = 0, combo = 0, lives = 3, gameActive = true, speed = 4.5;
+    let items = [];
+    let activeKeys = new Set();
+    const needleX = 250;
+
+    function press(key) { activeKeys.add(key); }
+    function release(key) { activeKeys.delete(key); }
+
+    function spawn() {
+        if(!gameActive) return;
+        const types = [
+            { id: 'polo', mech: 'tap', w: 80, h: 80 },
+            { id: 'banner', mech: 'hold', w: 200, h: 60 },
+            { id: 'sign', mech: 'chord', w: 100, h: 100 },
+            { id: 'mug', mech: 'rapid', w: 60, h: 70 }
+        ];
+        const type = types[Math.floor(Math.random() * types.length)];
+        const colors = ['C', 'M', 'Y', 'K'];
+        
+        items.push({
+            ...type,
+            x: -250, y: 150,
+            col1: colors[Math.floor(Math.random() * 4)],
+            col2: colors[Math.floor(Math.random() * 4)], // only used for chord
+            progress: 0,
+            hit: false, processed: false
+        });
+        setTimeout(spawn, Math.max(700, 1800 - (score * 1.5)));
+    }
+
+    function draw() {
+        if(!gameActive) return;
+        ctx.clearRect(0,0,500,400);
+
+        // Target Zone Frame
+        ctx.strokeStyle = combo >= 10 ? "#ffcc00" : "#eee";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(needleX - 40, 130, 80, 140);
+
+        items.forEach(item => {
+            item.x += speed;
+            const imgKey = item.hit ? `${item.id}-branded` : `${item.id}-base`;
+            
+            // Draw Item
+            if(assets[imgKey].complete) {
+                ctx.drawImage(assets[imgKey], item.x, item.y, item.w, item.h);
+            } else {
+                ctx.fillStyle = "#ddd"; ctx.fillRect(item.x, item.y, item.w, item.h);
+            }
+
+            // Draw Job Ticket Overlay
+            if(!item.hit) {
+                ctx.fillStyle = "#000"; ctx.font = "bold 16px Arial";
+                let txt = item.col1;
+                if(item.mech === 'chord') txt += " + " + item.col2;
+                if(item.mech === 'rapid') txt += " (TAP!)";
+                ctx.fillText(txt, item.x, item.y - 15);
+            }
+
+            // Logic Window
+            const inZone = item.x + item.w/2 > needleX - 40 && item.x + item.w/2 < needleX + 40;
+            if(inZone && !item.processed) {
+                if(item.mech === 'tap' && activeKeys.has(item.col1) && activeKeys.size === 1) success(item);
+                if(item.mech === 'chord' && activeKeys.has(item.col1) && activeKeys.has(item.col2)) success(item);
+                if(item.mech === 'hold' && activeKeys.has(item.col1)) {
+                    item.progress += 2; if(item.progress >= 100) success(item);
+                }
+                if(item.mech === 'rapid' && activeKeys.has(item.col1)) {
+                    item.progress += 5; if(item.progress >= 100) success(item);
+                }
+            }
+
+            if(item.x > 320 && !item.hit && !item.processed) {
+                item.processed = true; fail();
+            }
+        });
+        items = items.filter(i => i.x < 550);
+        requestAnimationFrame(draw);
+    }
+
+    function success(item) {
+        item.hit = true; item.processed = true;
+        combo++; score += (10 * Math.min(5, Math.floor(combo/5)+1));
+        document.getElementById('score').innerText = score;
+        document.getElementById('mult').innerText = Math.min(5, Math.floor(combo/5)+1) + "x";
+    }
+
+    function fail() {
+        combo = 0; lives--; 
+        document.getElementById('lives').innerText = "❤️".repeat(lives);
+        document.getElementById('mult').innerText = "1x";
+        if(lives <= 0) { gameActive = false; document.getElementById('overlay').style.display = 'flex'; document.getElementById('final-score').innerText = "SCORE: " + score; }
+    }
+
+    spawn(); draw();
+</script>
+</body>
+</html>
