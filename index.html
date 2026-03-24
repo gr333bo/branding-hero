@@ -15,12 +15,13 @@
             position: absolute; top: 0; left: 0; width: 100%; height: 140px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 10px; background: transparent; z-index: 10;
+            display: none; /* Hidden until game starts */
         }
         #stats { width: 100%; max-width: 400px; display: flex; justify-content: space-between; font-weight: 900; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         
         #job-preview { 
             height: 70px; display: flex; align-items: center; justify-content: center;
-            gap: 12px; background: rgba(255,255,255,0.6); border-radius: 12px; 
+            gap: 12px; background: rgba(255,255,255,0.9); border-radius: 12px; 
             padding: 5px 25px; min-width: 160px; margin-top: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
@@ -39,12 +40,19 @@
 
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
 
+        /* Overlay is now transparent to show background.svg behind it */
         #overlay { 
-            display: none; position: fixed; inset: 0; background: #111111; 
+            display: flex; position: fixed; inset: 0; background: transparent; 
             flex-direction: column; align-items: center; justify-content: center; 
             z-index: 100; text-align: center; color: #ffffff; 
         }
         .heart { width: 22px; height: 22px; margin-left: 4px; }
+        
+        #play-btn {
+            background: #ffffff; color: #111111; padding: 18px 60px; 
+            border: none; border-radius: 50px; font-weight: bold; 
+            font-size: 22px; cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
     </style>
 </head>
 <body>
@@ -69,9 +77,9 @@
     </div>
 
     <div id="overlay">
-        <img src="assets/branding-hero-logo.svg" style="width:200px; margin-bottom:20px;">
-        <h1 id="final-score"></h1>
-        <button onclick="location.reload()" style="background:#ffffff; color:#111111; padding:15px 40px; border:none; border-radius:50px; font-weight:bold; font-size:18px; cursor:pointer;">RESTART SHIFT</button>
+        <img src="assets/branding-hero-logo.svg" style="width:250px; margin-bottom:30px;">
+        <h1 id="final-score" style="margin-bottom: 20px; font-size: 28px;"></h1>
+        <button id="play-btn" onclick="startGame()">PLAY</button>
     </div>
 
 <script>
@@ -81,8 +89,6 @@
     const assetList = ['polo-base', 'polo-branded', 'banner-base', 'banner-branded', 'sign-base', 'sign-branded', 'mug-base', 'mug-branded', 'heart-active', 'heart-inactive', 'background', 'button-c', 'button-m', 'button-y', 'button-k', 'long-c', 'long-m', 'long-y', 'long-k'];
     
     let score = 0, combo = 0, lives = 3, gameActive = false, speed = 2.5, items = [], activeKeys = new Set();
-    
-    // New dynamic centering constants
     const hudHeight = 140;
     const controlsHeight = 320;
 
@@ -90,21 +96,21 @@
 
     function btnDown(key) {
         event.preventDefault();
+        if (!gameActive) return;
         activeKeys.add(key);
         const needleX = canvas.width / 2;
         const currentItem = items.find(i => {
             const img = assets[`${i.id}-base`];
             const w = i.h * (img.width / img.height);
-            const center = i.x + w/2;
-            return center > needleX - 85 && center < needleX + 85 && !i.processed;
+            return (i.x + w/2) > needleX - 85 && (i.x + w/2) < needleX + 85 && !i.processed;
         });
         if (currentItem && !currentItem.hit) {
             if (currentItem.mech === 'rapid' && key === currentItem.col1) {
                 currentItem.progress += 34; if (currentItem.progress >= 100) success(currentItem); updateTicketUI();
             } else if (currentItem.mech === 'tap' && key === currentItem.col1) {
                 success(currentItem);
-            } else if (currentItem.mech === 'chord') {
-                if (activeKeys.has(currentItem.col1) && activeKeys.has(currentItem.col2)) success(currentItem);
+            } else if (currentItem.mech === 'chord' && activeKeys.has(currentItem.col1) && activeKeys.has(currentItem.col2)) {
+                success(currentItem);
             }
         }
     }
@@ -114,58 +120,29 @@
     function init() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        drawBackgroundOnly(); // Keep background drawing while waiting for Play
+    }
+
+    function drawBackgroundOnly() {
+        if (gameActive) return;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        drawBG();
+        requestAnimationFrame(drawBackgroundOnly);
+    }
+
+    function startGame() {
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('hud').style.display = 'flex';
+        score = 0; combo = 0; lives = 3; items = []; speed = 2.5;
+        document.getElementById('score').innerText = "0";
+        document.getElementById('mult').innerText = "1x";
         updateLivesUI();
         gameActive = true;
         spawn();
         draw();
     }
-    setTimeout(init, 300);
 
-    function spawn() {
-        if(!gameActive) return;
-        const types = [
-            { id: 'polo', mech: 'tap', h: 85 }, { id: 'banner', mech: 'hold', h: 65 },
-            { id: 'sign', mech: 'chord', h: 105 }, { id: 'mug', mech: 'rapid', h: 75 }
-        ];
-        const t = types[Math.floor(Math.random() * types.length)];
-        const colors = ['C', 'M', 'Y', 'K'];
-        let c1 = colors[Math.floor(Math.random()*4)], c2 = colors[Math.floor(Math.random()*4)];
-        while(c1 === c2) c2 = colors[Math.floor(Math.random()*4)];
-
-        // Calculate the center of the available space between HUD and Controls
-        const availableSpace = canvas.height - hudHeight - controlsHeight;
-        const trackY = hudHeight + (availableSpace / 2);
-
-        items.push({ ...t, x: -350, y: trackY - (t.h/2), col1: c1, col2: c2, progress: 0, hit: false, processed: false });
-        updateTicketUI();
-        setTimeout(spawn, Math.max(1000, 3000 - (score * 1.5)));
-    }
-
-    function updateTicketUI() {
-        const area = document.getElementById('ticket-area');
-        area.innerHTML = '';
-        const next = items.find(i => !i.hit && !i.processed);
-        if(!next) return;
-        if(next.mech === 'hold') {
-            const img = document.createElement('img'); img.src = `assets/long-${next.col1.toLowerCase()}.svg`; img.className = 'ticket-img'; area.appendChild(img);
-        } else if(next.mech === 'chord') {
-            [next.col1, next.col2].forEach(col => {
-                const img = document.createElement('img'); img.src = `assets/button-${col.toLowerCase()}.svg`; img.className = 'ticket-img'; area.appendChild(img);
-            });
-        } else if(next.mech === 'rapid') {
-            const remaining = 3 - Math.floor(next.progress / 33.4);
-            for(let i=0; i < Math.max(0, remaining); i++) {
-                const img = document.createElement('img'); img.src = `assets/button-${next.col1.toLowerCase()}.svg`; img.className = 'ticket-img'; area.appendChild(img);
-            }
-        } else {
-            const img = document.createElement('img'); img.src = `assets/button-${next.col1.toLowerCase()}.svg`; img.className = 'ticket-img'; area.appendChild(img);
-        }
-    }
-
-    function draw() {
-        if(!gameActive) return;
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        
+    function drawBG() {
         if (assets.background.complete) {
             const img = assets.background;
             const sR = canvas.width / canvas.height, iR = img.width / img.height;
@@ -174,12 +151,28 @@
             else { dW = canvas.height * iR; dH = canvas.height; dX = (canvas.width - dW) / 2; dY = 0; }
             ctx.drawImage(img, dX, dY, dW, dH);
         }
+    }
 
+    function spawn() {
+        if(!gameActive) return;
+        const types = [{ id:'polo', mech:'tap', h:85 }, { id:'banner', mech:'hold', h:65 }, { id:'sign', mech:'chord', h:105 }, { id:'mug', mech:'rapid', h:75 }];
+        const t = types[Math.floor(Math.random() * types.length)];
+        const colors = ['C', 'M', 'Y', 'K'];
+        let c1 = colors[Math.floor(Math.random()*4)], c2 = colors[Math.floor(Math.random()*4)];
+        while(c1 === c2) c2 = colors[Math.floor(Math.random()*4)];
+        const trackY = hudHeight + ((canvas.height - hudHeight - controlsHeight) / 2);
+        items.push({ ...t, x: -350, y: trackY - (t.h/2), col1: c1, col2: c2, progress: 0, hit: false, processed: false });
+        updateTicketUI();
+        setTimeout(spawn, Math.max(1000, 3000 - (score * 1.5)));
+    }
+
+    function draw() {
+        if(!gameActive) return;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        drawBG();
         const needleX = canvas.width/2;
-        const availableSpace = canvas.height - hudHeight - controlsHeight;
-        const trackY = hudHeight + (availableSpace / 2);
-
-        // Targeted "Hit Zone" indicator
+        const trackY = hudHeight + ((canvas.height - hudHeight - controlsHeight) / 2);
+        
         ctx.strokeStyle = "rgba(255,255,255,0.15)";
         ctx.setLineDash([10, 5]);
         ctx.strokeRect(needleX - 85, trackY - 80, 170, 160);
@@ -191,8 +184,7 @@
             if(img.complete) {
                 const w = item.h * (img.width/img.height);
                 ctx.drawImage(img, item.x, item.y, w, item.h);
-                const center = item.x + w/2;
-                const inZone = center > needleX - 85 && center < needleX + 85;
+                const inZone = (item.x + w/2) > needleX - 85 && (item.x + w/2) < needleX + 85;
                 if (inZone && !item.hit && item.mech === 'hold' && activeKeys.has(item.col1)) {
                     item.progress += 2.5; if (item.progress >= 100) success(item);
                 }
@@ -214,7 +206,14 @@
     function fail() {
         combo = 0; lives--; updateLivesUI();
         document.getElementById('mult').innerText = "1x";
-        if(lives <= 0) { gameActive = false; document.getElementById('overlay').style.display='flex'; document.getElementById('final-score').innerText = "TOTAL BRANDED: " + score; }
+        if(lives <= 0) { 
+            gameActive = false; 
+            document.getElementById('overlay').style.display = 'flex'; 
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('final-score').innerText = "TOTAL BRANDED: " + score;
+            document.getElementById('play-btn').innerText = "PLAY AGAIN";
+            drawBackgroundOnly();
+        }
         updateTicketUI();
     }
 
@@ -224,6 +223,28 @@
             const img = document.createElement('img'); img.src = i < lives ? 'assets/heart-active.svg' : 'assets/heart-inactive.svg'; img.className = 'heart'; c.appendChild(img);
         }
     }
+
+    function updateTicketUI() {
+        const area = document.getElementById('ticket-area'); area.innerHTML = '';
+        const next = items.find(i => !i.hit && !i.processed);
+        if(!next) return;
+        if(next.mech === 'hold') {
+            const img = document.createElement('img'); img.src = `assets/long-${next.col1.toLowerCase()}.svg`; img.className = 'ticket-img'; area.appendChild(img);
+        } else if(next.mech === 'chord') {
+            [next.col1, next.col2].forEach(col => {
+                const img = document.createElement('img'); img.src = `assets/button-${col.toLowerCase()}.svg`; img.className = 'ticket-img'; area.appendChild(img);
+            });
+        } else if(next.mech === 'rapid') {
+            const rem = 3 - Math.floor(next.progress / 33.4);
+            for(let i=0; i < Math.max(0, rem); i++) {
+                const img = document.createElement('img'); img.src = `assets/button-${next.col1.toLowerCase()}.svg`; img.className = 'ticket-img'; area.appendChild(img);
+            }
+        } else {
+            const img = document.createElement('img'); img.src = `assets/button-${next.col1.toLowerCase()}.svg`; img.className = 'ticket-img'; area.appendChild(img);
+        }
+    }
+
+    setTimeout(init, 300);
 </script>
 </body>
 </html>
