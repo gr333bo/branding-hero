@@ -11,11 +11,11 @@
             background: #111111; color: #ffffff; font-family: sans-serif; overflow: hidden; 
         }
         
+        /* HUD - Hidden at start */
         #hud { 
             position: absolute; top: 0; left: 0; width: 100%; height: 140px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
             padding: 10px; background: transparent; z-index: 10;
-            display: none; /* Hidden until game starts */
         }
         #stats { width: 100%; max-width: 400px; display: flex; justify-content: space-between; font-weight: 900; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         
@@ -27,9 +27,10 @@
         }
         .ticket-img { height: 42px; width: auto; } 
 
+        /* Controls - Hidden at start */
         #controls-wrapper {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 320px;
-            display: flex; align-items: center; justify-content: center; background: transparent; z-index: 10;
+            display: none; align-items: center; justify-content: center; background: transparent; z-index: 10;
         }
         #controls { position: relative; width: 280px; height: 280px; }
         .btn { position: absolute; width: 100px; height: 100px; background-size: contain; background-repeat: no-repeat; cursor: pointer; }
@@ -40,7 +41,6 @@
 
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
 
-        /* Overlay is now transparent to show background.svg behind it */
         #overlay { 
             display: flex; position: fixed; inset: 0; background: transparent; 
             flex-direction: column; align-items: center; justify-content: center; 
@@ -52,7 +52,11 @@
             background: #ffffff; color: #111111; padding: 18px 60px; 
             border: none; border-radius: 50px; font-weight: bold; 
             font-size: 22px; cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            transition: transform 0.1s;
         }
+        #play-btn:active { transform: scale(0.95); }
+
+        #best-score { font-size: 14px; opacity: 0.7; margin-top: 15px; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -78,8 +82,9 @@
 
     <div id="overlay">
         <img src="assets/branding-hero-logo.svg" style="width:250px; margin-bottom:30px;">
-        <h1 id="final-score" style="margin-bottom: 20px; font-size: 28px;"></h1>
-        <button id="play-btn" onclick="startGame()">PLAY</button>
+        <h1 id="final-score" style="margin-bottom: 5px; font-size: 28px;"></h1>
+        <div id="best-score"></div>
+        <button id="play-btn" onclick="startGame()" style="margin-top: 30px;">PLAY</button>
     </div>
 
 <script>
@@ -93,6 +98,10 @@
     const controlsHeight = 320;
 
     assetList.forEach(name => { assets[name] = new Image(); assets[name].src = `assets/${name}.svg`; });
+
+    // High Score Logic
+    let highScore = localStorage.getItem('brandingHeroBest') || 0;
+    document.getElementById('best-score').innerText = highScore > 0 ? `BEST SESSION: ${highScore}` : "";
 
     function btnDown(key) {
         event.preventDefault();
@@ -120,7 +129,7 @@
     function init() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        drawBackgroundOnly(); // Keep background drawing while waiting for Play
+        drawBackgroundOnly();
     }
 
     function drawBackgroundOnly() {
@@ -131,8 +140,12 @@
     }
 
     function startGame() {
+        // Toggle UI Layers
         document.getElementById('overlay').style.display = 'none';
         document.getElementById('hud').style.display = 'flex';
+        document.getElementById('controls-wrapper').style.display = 'flex';
+        
+        // Reset Stats
         score = 0; combo = 0; lives = 3; items = []; speed = 2.5;
         document.getElementById('score').innerText = "0";
         document.getElementById('mult').innerText = "1x";
@@ -210,7 +223,16 @@
             gameActive = false; 
             document.getElementById('overlay').style.display = 'flex'; 
             document.getElementById('hud').style.display = 'none';
+            document.getElementById('controls-wrapper').style.display = 'none';
+            
+            // Check High Score
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('brandingHeroBest', highScore);
+            }
+            
             document.getElementById('final-score').innerText = "TOTAL BRANDED: " + score;
+            document.getElementById('best-score').innerText = `BEST SESSION: ${highScore}`;
             document.getElementById('play-btn').innerText = "PLAY AGAIN";
             drawBackgroundOnly();
         }
