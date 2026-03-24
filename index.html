@@ -8,23 +8,26 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            background: #111111; color: #fff; font-family: sans-serif; overflow: hidden; 
+            background: #111111; color: #ffffff; font-family: sans-serif; overflow: hidden; 
         }
         
+        /* HUD - White Text */
         #hud { 
             position: absolute; top: 0; left: 0; width: 100%; height: 130px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 10px; background: transparent; z-index: 10;
         }
-        #stats { width: 100%; max-width: 400px; display: flex; justify-content: space-between; font-weight: 900; color: #fff; }
+        #stats { width: 100%; max-width: 400px; display: flex; justify-content: space-between; font-weight: 900; color: #ffffff; }
         
+        /* Ticket Box - Glassmorphism style for dark mode */
         #job-preview { 
             height: 65px; display: flex; align-items: center; justify-content: center;
-            gap: 12px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.1); border-radius: 12px; 
+            gap: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; 
             padding: 5px 25px; min-width: 150px; margin-top: 10px;
         }
         .ticket-img { height: 40px; width: auto; } 
 
+        /* Controls */
         #controls-wrapper {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 320px;
             display: flex; align-items: center; justify-content: center; background: transparent; z-index: 10;
@@ -41,7 +44,7 @@
         #overlay { 
             display: none; position: fixed; inset: 0; background: #111111; 
             flex-direction: column; align-items: center; justify-content: center; 
-            z-index: 100; text-align: center; color: #fff; 
+            z-index: 100; text-align: center; color: #ffffff; 
         }
         .heart { width: 22px; height: 22px; margin-left: 4px; }
     </style>
@@ -70,7 +73,7 @@
     <div id="overlay">
         <img src="assets/branding-hero-logo.svg" style="width:200px; margin-bottom:20px;">
         <h1 id="final-score"></h1>
-        <button onclick="location.reload()" style="background:#fff; color:#111; padding:15px 40px; border:none; border-radius:50px; font-weight:bold; font-size:18px; cursor:pointer;">RESTART</button>
+        <button onclick="location.reload()" style="background:#ffffff; color:#111111; padding:15px 40px; border:none; border-radius:50px; font-weight:bold; font-size:18px; cursor:pointer;">RESTART SHIFT</button>
     </div>
 
 <script>
@@ -89,25 +92,27 @@
 
     assetList.forEach(name => { assets[name] = new Image(); assets[name].src = `assets/${name}.svg`; });
 
-    // Handle separate taps for Rapid/Rush mechanic
     function handleInput(key) {
         event.preventDefault();
         activeKeys.add(key);
         
         const needleX = canvas.width / 2;
+        const trackY = canvas.height / 2;
+
         const currentItem = items.find(i => {
-            const w = i.h * (assets[`${i.id}-base`].width / assets[`${i.id}-base`].height);
+            const img = assets[`${i.id}-base`];
+            const w = i.h * (img.width / img.height);
             const center = i.x + w/2;
-            return center > needleX - 60 && center < needleX + 60 && !i.processed;
+            return center > needleX - 70 && center < needleX + 70 && !i.processed;
         });
 
+        // Fixed Rush Logic: Requires 3 distinct taps
         if (currentItem && currentItem.mech === 'rapid' && key === currentItem.col1) {
-            currentItem.progress += 34; // Needs 3 taps to exceed 100
+            currentItem.progress += 34; 
             if (currentItem.progress >= 100) success(currentItem);
             updateTicketUI();
         }
         
-        // Auto-release after a frame to ensure "taps" are counted individually
         setTimeout(() => activeKeys.delete(key), 50);
     }
 
@@ -133,7 +138,7 @@
         let c1 = colors[Math.floor(Math.random()*4)], c2 = colors[Math.floor(Math.random()*4)];
         while(c1 === c2) c2 = colors[Math.floor(Math.random()*4)];
 
-        items.push({ ...t, x: -300, y: (canvas.height/2) - (t.h/2), col1: c1, col2: c2, progress: 0, hit: false, processed: false });
+        items.push({ ...t, x: -350, y: (canvas.height/2) - (t.h/2), col1: c1, col2: c2, progress: 0, hit: false, processed: false });
         updateTicketUI();
         setTimeout(spawn, Math.max(1000, 3000 - (score * 1.5)));
     }
@@ -157,9 +162,8 @@
                 area.appendChild(img);
             });
         } else if(next.mech === 'rapid') {
-            // Show remaining taps (starts at 3)
             const remaining = 3 - Math.floor(next.progress / 33.4);
-            for(let i=0; i < remaining; i++) {
+            for(let i=0; i < Math.max(0, remaining); i++) {
                 const img = document.createElement('img');
                 img.src = `assets/button-${next.col1.toLowerCase()}.svg`;
                 img.className = 'ticket-img';
@@ -177,7 +181,7 @@
         if(!gameActive) return;
         ctx.clearRect(0,0,canvas.width,canvas.height);
         
-        // 1. Draw your custom background asset
+        // Background stretched to fill rectangular canvas
         if (assets.background.complete) {
             ctx.drawImage(assets.background, 0, 0, canvas.width, canvas.height);
         }
@@ -185,10 +189,10 @@
         const needleX = canvas.width/2;
         const trackY = canvas.height/2;
 
-        // Subtle target zone
-        ctx.strokeStyle = "rgba(255,255,255,0.1)";
-        ctx.setLineDash([8, 4]);
-        ctx.strokeRect(needleX - 60, trackY - 75, 120, 150);
+        // Visual "Landing Strip"
+        ctx.strokeStyle = "rgba(255,255,255,0.08)";
+        ctx.setLineDash([10, 5]);
+        ctx.strokeRect(needleX - 65, trackY - 80, 130, 160);
         ctx.setLineDash([]);
 
         items.forEach(item => {
@@ -199,17 +203,17 @@
                 ctx.drawImage(img, item.x, item.y, w, item.h);
                 
                 const center = item.x + w/2;
-                const inZone = center > needleX - 60 && center < needleX + 60;
+                const inZone = center > needleX - 65 && center < needleX + 65;
 
                 if(inZone && !item.processed) {
                     if(item.mech === 'tap' && activeKeys.has(item.col1)) success(item);
                     if(item.mech === 'chord' && activeKeys.has(item.col1) && activeKeys.has(item.col2)) success(item);
                     if(item.mech === 'hold' && activeKeys.has(item.col1)) { 
-                        item.progress += 4; 
+                        item.progress += 3.5; 
                         if(item.progress >= 100) success(item); 
                     }
                 }
-                if(item.x > needleX + 60 && !item.hit && !item.processed) { item.processed = true; fail(); }
+                if(item.x > needleX + 70 && !item.hit && !item.processed) { item.processed = true; fail(); }
             }
         });
         items = items.filter(i => i.x < canvas.width + 100);
@@ -227,7 +231,7 @@
     function fail() {
         combo = 0; lives--; updateLivesUI();
         document.getElementById('mult').innerText = "1x";
-        if(lives <= 0) { gameActive = false; document.getElementById('overlay').style.display='flex'; document.getElementById('final-score').innerText = "TOTAL BRANDED: " + score; }
+        if(lives <= 0) { gameActive = false; document.getElementById('overlay').style.display='flex'; document.getElementById('final-score').innerText = "UNITS BRANDED: " + score; }
         updateTicketUI();
     }
 
