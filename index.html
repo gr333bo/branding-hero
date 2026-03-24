@@ -11,32 +11,38 @@
             background: #fff; font-family: sans-serif; overflow: hidden; 
         }
         
-        /* Top Section: Fixed Height */
+        /* Fixed HUD Height */
         #hud { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 120px;
+            position: absolute; top: 0; left: 0; width: 100%; height: 130px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 10px; background: #fff; z-index: 10;
         }
-        #stats { width: 100%; max-width: 400px; display: flex; justify-content: space-between; font-weight: 900; }
-        #job-preview { height: 60px; display: flex; align-items: center; gap: 10px; background: #fafafa; border: 2px solid #eee; border-radius: 10px; padding: 0 15px; margin-top: 5px; }
+        #stats { width: 100%; max-width: 400px; display: flex; justify-content: space-between; font-weight: 900; margin-bottom: 8px; }
+        
+        /* The Ticket Box - All icons will have same vertical height */
+        #job-preview { 
+            height: 65px; display: flex; align-items: center; justify-content: center;
+            gap: 12px; background: #fafafa; border: 2px solid #eee; border-radius: 12px; 
+            padding: 5px 25px; min-width: 150px;
+        }
+        .ticket-img { height: 40px; width: auto; } /* Fixed vertical space */
 
-        /* Bottom Section: Fixed Height */
+        /* Fixed Controls Height */
         #controls-wrapper {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 300px;
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 320px;
             display: flex; align-items: center; justify-content: center; background: #fff; z-index: 10;
         }
         #controls { position: relative; width: 280px; height: 280px; }
-        .btn { position: absolute; width: 95px; height: 95px; background-size: contain; background-repeat: no-repeat; cursor: pointer; }
-        .y { top: 0; left: 92px; background-image: url('assets/button-y.svg'); }
-        .c { top: 92px; left: 0; background-image: url('assets/button-c.svg'); }
-        .m { top: 92px; right: 0; background-image: url('assets/button-m.svg'); }
-        .k { bottom: 0; left: 92px; background-image: url('assets/button-k.svg'); }
+        .btn { position: absolute; width: 100px; height: 100px; background-size: contain; background-repeat: no-repeat; cursor: pointer; }
+        .y { top: 0; left: 90px; background-image: url('assets/button-y.svg'); }
+        .c { top: 90px; left: 0; background-image: url('assets/button-c.svg'); }
+        .m { top: 90px; right: 0; background-image: url('assets/button-m.svg'); }
+        .k { bottom: 0; left: 90px; background-image: url('assets/button-k.svg'); }
 
-        /* Middle Section: The Game */
-        canvas { position: absolute; top: 120px; left: 0; width: 100%; height: calc(100% - 420px); background: #fff; }
+        /* Flexible Game Canvas */
+        canvas { position: absolute; top: 130px; left: 0; width: 100%; height: calc(100% - 450px); background: #fff; }
 
         #overlay { display: none; position: fixed; inset: 0; background: #fff; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
-        .ticket-icon { height: 35px; }
         .heart { width: 22px; height: 22px; margin-left: 4px; }
     </style>
 </head>
@@ -47,7 +53,9 @@
             <div>SCORE: <span id="score">0</span> <span id="mult" style="color:#ffcc00">1x</span></div>
             <div id="lives-container"></div>
         </div>
-        <div id="job-preview"><div id="ticket-area" style="display:flex; align-items:center; gap:8px;"></div></div>
+        <div id="job-preview">
+            <div id="ticket-area" style="display:flex; align-items:center; gap:10px;"></div>
+        </div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -71,7 +79,13 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const assets = {};
-    const assetList = ['polo-base', 'polo-branded', 'banner-base', 'banner-branded', 'sign-base', 'sign-branded', 'mug-base', 'mug-branded', 'heart-active', 'heart-inactive', 'button-c', 'button-m', 'button-y', 'button-k'];
+    const assetList = [
+        'polo-base', 'polo-branded', 'banner-base', 'banner-branded', 
+        'sign-base', 'sign-branded', 'mug-base', 'mug-branded', 
+        'heart-active', 'heart-inactive', 
+        'button-c', 'button-m', 'button-y', 'button-k',
+        'long-c', 'long-m', 'long-y', 'long-k'
+    ];
     
     let score = 0, combo = 0, lives = 3, gameActive = false, speed = 2.5, items = [], activeKeys = new Set();
 
@@ -82,21 +96,22 @@
 
     function init() {
         canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight - 420;
+        canvas.height = window.innerHeight - 450;
         updateLivesUI();
         gameActive = true;
         spawn();
         draw();
     }
 
-    // Wait 300ms for the iFrame to settle its dimensions
     setTimeout(init, 300);
 
     function spawn() {
         if(!gameActive) return;
         const types = [
-            { id: 'polo', mech: 'tap', h: 80 }, { id: 'banner', mech: 'hold', h: 60 },
-            { id: 'sign', mech: 'chord', h: 100 }, { id: 'mug', mech: 'rapid', h: 70 }
+            { id: 'polo', mech: 'tap', h: 80 }, 
+            { id: 'banner', mech: 'hold', h: 60 },
+            { id: 'sign', mech: 'chord', h: 100 }, 
+            { id: 'mug', mech: 'rapid', h: 70 }
         ];
         const t = types[Math.floor(Math.random() * types.length)];
         const colors = ['C', 'M', 'Y', 'K'];
@@ -108,14 +123,51 @@
         setTimeout(spawn, Math.max(1000, 3000 - (score * 1.5)));
     }
 
+    function updateTicketUI() {
+        const area = document.getElementById('ticket-area');
+        area.innerHTML = '';
+        const next = items.find(i => !i.hit && !i.processed);
+        if(!next) return;
+
+        // Logic for which icons to show in the Ticket Box
+        if(next.mech === 'hold') {
+            // Use the "Long" assets for Hold mechanics
+            const img = document.createElement('img');
+            img.src = `assets/long-${next.col1.toLowerCase()}.svg`;
+            img.className = 'ticket-img';
+            area.appendChild(img);
+        } else if(next.mech === 'chord') {
+            // Tap both icons side-by-side
+            [next.col1, next.col2].forEach(col => {
+                const img = document.createElement('img');
+                img.src = `assets/button-${col.toLowerCase()}.svg`;
+                img.className = 'ticket-img';
+                area.appendChild(img);
+            });
+        } else if(next.mech === 'rapid') {
+            // Show three icons for Rapid/Rush mechanic
+            for(let i=0; i<3; i++) {
+                const img = document.createElement('img');
+                img.src = `assets/button-${next.col1.toLowerCase()}.svg`;
+                img.className = 'ticket-img';
+                area.appendChild(img);
+            }
+        } else {
+            // Single tap
+            const img = document.createElement('img');
+            img.src = `assets/button-${next.col1.toLowerCase()}.svg`;
+            img.className = 'ticket-img';
+            area.appendChild(img);
+        }
+    }
+
     function draw() {
         if(!gameActive) return;
         ctx.clearRect(0,0,canvas.width,canvas.height);
         const needleX = canvas.width/2;
 
-        // Visual conveyor track
         ctx.fillStyle = "#fafafa";
-        ctx.fillRect(0, (canvas.height/2)-50, canvas.width, 100);
+        ctx.fillRect(0, (canvas.height/2)-55, canvas.width, 110);
 
         items.forEach(item => {
             item.x += speed;
@@ -149,7 +201,7 @@
     function fail() {
         combo = 0; lives--; updateLivesUI();
         document.getElementById('mult').innerText = "1x";
-        if(lives <= 0) { gameActive = false; document.getElementById('overlay').style.display='flex'; document.getElementById('final-score').innerText = "SCORE: " + score; }
+        if(lives <= 0) { gameActive = false; document.getElementById('overlay').style.display='flex'; document.getElementById('final-score').innerText = "TOTAL BRANDED: " + score; }
         updateTicketUI();
     }
 
@@ -159,20 +211,6 @@
             const img = document.createElement('img');
             img.src = i < lives ? 'assets/heart-active.svg' : 'assets/heart-inactive.svg';
             img.className = 'heart'; c.appendChild(img);
-        }
-    }
-
-    function updateTicketUI() {
-        const area = document.getElementById('ticket-area'); area.innerHTML = '';
-        const next = items.find(i => !i.hit && !i.processed);
-        if(next) {
-            const img1 = document.createElement('img'); img1.src = `assets/button-${next.col1.toLowerCase()}.svg`;
-            img1.className = 'ticket-icon'; area.appendChild(img1);
-            if(next.mech === 'chord') {
-                area.innerHTML += '<b>+</b>';
-                const img2 = document.createElement('img'); img2.src = `assets/button-${next.col2.toLowerCase()}.svg`;
-                img2.className = 'ticket-icon'; area.appendChild(img2);
-            }
         }
     }
 </script>
