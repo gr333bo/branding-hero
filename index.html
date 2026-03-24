@@ -5,28 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Branding Hero: CMYK Edition</title>
     <style>
-        body { margin: 0; background: #fff; font-family: 'Helvetica Neue', Arial, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding-bottom: 20px; box-sizing: border-box; }
+        body { margin: 0; background: #fff; font-family: 'Helvetica Neue', Arial, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding-bottom: 30px; box-sizing: border-box; }
         
         /* HUD & Job Tickets */
-        #hud { width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; padding: 10px; }
-        #stats { width: 100%; display: flex; justify-content: space-between; font-weight: 900; margin-bottom: 10px; padding: 0 15px; box-sizing: border-box; }
-        #job-preview { height: 60px; display: flex; align-items: center; gap: 10px; background: #f8f8f8; border-radius: 10px; padding: 5px 20px; border: 1px solid #eee; }
-        .ticket-icon { height: 40px; }
+        #hud { width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; padding: 15px; background: #fff; z-index: 10; }
+        #stats { width: 100%; display: flex; justify-content: space-between; font-weight: 900; margin-bottom: 15px; padding: 0 5px; box-sizing: border-box; font-size: 18px; }
+        #job-preview { height: 70px; display: flex; align-items: center; gap: 12px; background: #fafafa; border-radius: 15px; padding: 5px 25px; border: 2px solid #f0f0f0; min-width: 200px; justify-content: center; }
+        .ticket-icon { height: 45px; }
 
-        canvas { background: #fff; width: 100%; max-width: 500px; flex-grow: 1; touch-action: none; }
+        /* Game Canvas Area */
+        canvas { background: #fff; width: 100%; max-width: 500px; touch-action: none; flex-grow: 1; }
         
-        /* Diamond Layout - Larger and Closer */
-        #controls { position: relative; width: 260px; height: 260px; margin-bottom: 10px; }
-        .btn { position: absolute; width: 95px; height: 95px; cursor: pointer; user-select: none; transition: transform 0.05s; background-size: contain; background-repeat: no-repeat; border: none; outline: none; -webkit-tap-highlight-color: transparent; }
+        /* Diamond Layout - Large & Ergonomic */
+        #controls { position: relative; width: 270px; height: 270px; margin-bottom: 10px; }
+        .btn { position: absolute; width: 100px; height: 100px; cursor: pointer; user-select: none; transition: transform 0.05s; background-size: contain; background-repeat: no-repeat; border: none; outline: none; -webkit-tap-highlight-color: transparent; }
         .btn:active { transform: scale(0.9); }
         
-        .c { top: 82px; left: 0; background-image: url('assets/button-c.svg'); }
-        .m { top: 82px; right: 0; background-image: url('assets/button-m.svg'); }
-        .y { top: 0; left: 82px; background-image: url('assets/button-y.svg'); }
-        .k { bottom: 0; left: 82px; background-image: url('assets/button-k.svg'); }
+        /* Optimized Diamond Spacing */
+        .c { top: 85px; left: 0; background-image: url('assets/button-c.svg'); }
+        .m { top: 85px; right: 0; background-image: url('assets/button-m.svg'); }
+        .y { top: 0; left: 85px; background-image: url('assets/button-y.svg'); }
+        .k { bottom: 0; left: 85px; background-image: url('assets/button-k.svg'); }
         
         #overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.98); flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
-        .heart { width: 25px; height: 25px; margin-left: 5px; }
+        .heart { width: 28px; height: 28px; margin-left: 6px; }
     </style>
 </head>
 <body>
@@ -37,8 +39,8 @@
             <div id="lives-container"></div>
         </div>
         <div id="job-preview">
-            <span style="font-size: 10px; font-weight: 900; color: #aaa; margin-right: 5px;">NEXT JOB:</span>
-            <div id="ticket-area" style="display: flex; align-items: center; gap: 5px;"></div>
+            <span style="font-size: 11px; font-weight: 900; color: #bbb; margin-right: 5px;">NEXT JOB:</span>
+            <div id="ticket-area" style="display: flex; align-items: center; gap: 8px;"></div>
         </div>
     </div>
 
@@ -52,20 +54,20 @@
     </div>
 
     <div id="overlay">
-        <img src="assets/branding-hero-logo.svg" style="width: 220px; margin-bottom: 20px;">
-        <h1 style="letter-spacing: 2px;">SHIFT COMPLETE</h1>
-        <p id="final-score" style="font-size: 28px; font-weight: 900; color: #000; margin-top: 0;"></p>
-        <button onclick="location.reload()" style="background:#000; color:#fff; padding:18px 45px; border:none; border-radius:50px; font-weight:bold; cursor:pointer; font-size: 16px;">RESTART SHIFT</button>
+        <img src="assets/branding-hero-logo.svg" style="width: 240px; margin-bottom: 25px;">
+        <h1 style="letter-spacing: 2px; margin-bottom: 5px;">SHIFT COMPLETE</h1>
+        <p id="final-score" style="font-size: 32px; font-weight: 900; color: #000; margin-top: 0;"></p>
+        <button onclick="location.reload()" style="background:#000; color:#fff; padding:20px 50px; border:none; border-radius:50px; font-weight:bold; cursor:pointer; font-size: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">RESTART SHIFT</button>
     </div>
 
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
-    // Make canvas taller for mobile
+    // Fixed coordinate system to prevent items from disappearing in tall iFrames
     function resize() {
         canvas.width = window.innerWidth > 500 ? 500 : window.innerWidth;
-        canvas.height = window.innerHeight * 0.4;
+        canvas.height = 450; 
     }
     window.onresize = resize;
     resize();
@@ -82,6 +84,7 @@
     let items = [];
     let activeKeys = new Set();
     const needleX = canvas.width / 2;
+    const trackY = 220; // The vertical center of the "conveyor"
 
     function press(key) { activeKeys.add(key); }
     function release(key) { activeKeys.delete(key); }
@@ -100,35 +103,34 @@
     function spawn() {
         if(!gameActive) return;
         const types = [
-            { id: 'polo', mech: 'tap', displayH: 90 },
-            { id: 'banner', mech: 'hold', displayH: 70 },
-            { id: 'sign', mech: 'chord', displayH: 110 },
-            { id: 'mug', mech: 'rapid', displayH: 80 }
+            { id: 'polo', mech: 'tap', displayH: 100 },
+            { id: 'banner', mech: 'hold', displayH: 75 },
+            { id: 'sign', mech: 'chord', displayH: 120 },
+            { id: 'mug', mech: 'rapid', displayH: 85 }
         ];
         const type = types[Math.floor(Math.random() * types.length)];
         const colors = ['C', 'M', 'Y', 'K'];
         
         let c1 = colors[Math.floor(Math.random() * 4)];
         let c2 = colors[Math.floor(Math.random() * 4)];
-        // Bug Fix #1: Ensure chord colors are never the same
         while (type.mech === 'chord' && c1 === c2) {
             c2 = colors[Math.floor(Math.random() * 4)];
         }
 
         items.push({
-            ...type, x: -300, y: canvas.height/2 - 40,
+            ...type, x: -400, y: trackY - (type.displayH / 2),
             col1: c1, col2: c2, progress: 0,
             hit: false, processed: false
         });
         
         updateTicketUI();
+        // Dynamic difficulty scaling
         setTimeout(spawn, Math.max(1000, 3000 - (score * 1.5)));
     }
 
     function updateTicketUI() {
         const area = document.getElementById('ticket-area');
         area.innerHTML = '';
-        // Find the first un-processed item
         const next = items.find(i => !i.hit && !i.processed);
         if(next) {
             const img1 = document.createElement('img');
@@ -137,25 +139,30 @@
             area.appendChild(img1);
             
             if(next.mech === 'chord') {
-                area.innerHTML += '<span style="font-weight:900">+</span>';
+                area.innerHTML += '<span style="font-weight:900; font-size: 20px;">+</span>';
                 const img2 = document.createElement('img');
                 img2.src = `assets/button-${next.col2.toLowerCase()}.svg`;
                 img2.className = 'ticket-icon';
                 area.appendChild(img2);
             }
-            if(next.mech === 'rapid') area.innerHTML += '<span style="font-weight:900">x3</span>';
-            if(next.mech === 'hold') area.innerHTML += '<span style="font-size:10px; font-weight:900">HOLD</span>';
+            if(next.mech === 'rapid') area.innerHTML += '<span style="font-weight:900; margin-left:5px; background:#000; color:#fff; padding:2px 8px; border-radius:5px; font-size:12px;">TAP FAST</span>';
+            if(next.mech === 'hold') area.innerHTML += '<span style="font-weight:900; margin-left:5px; background:#000; color:#fff; padding:2px 8px; border-radius:5px; font-size:12px;">HOLD</span>';
         }
     }
 
     function draw() {
         if(!gameActive) return;
-        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Fix #2: Hitbox border only (no solid fill)
-        ctx.strokeStyle = "#f0f0f0";
-        ctx.setLineDash([5, 5]);
-        ctx.strokeRect(needleX - 55, canvas.height/2 - 60, 110, 140);
+        // Visual conveyor track
+        ctx.fillStyle = "#fafafa";
+        ctx.fillRect(0, trackY - 70, canvas.width, 140);
+
+        // Targeted "Active" Branding Zone
+        ctx.strokeStyle = "#eee";
+        ctx.setLineDash([8, 4]);
+        ctx.lineWidth = 2;
+        ctx.strokeRect(needleX - 65, trackY - 80, 130, 160);
         ctx.setLineDash([]);
 
         items.forEach(item => {
@@ -169,20 +176,20 @@
                 ctx.drawImage(img, item.x, item.y, finalW, item.displayH);
 
                 const center = item.x + finalW/2;
-                const inZone = center > needleX - 55 && center < needleX + 55;
+                const inZone = center > needleX - 65 && center < needleX + 65;
 
                 if(inZone && !item.processed) {
                     if(item.mech === 'tap' && activeKeys.has(item.col1)) success(item);
                     if(item.mech === 'chord' && activeKeys.has(item.col1) && activeKeys.has(item.col2)) success(item);
                     if(item.mech === 'hold' && activeKeys.has(item.col1)) {
-                        item.progress += 3; if(item.progress >= 100) success(item);
+                        item.progress += 3.2; if(item.progress >= 100) success(item);
                     }
                     if(item.mech === 'rapid' && activeKeys.has(item.col1)) {
-                        item.progress += 10; if(item.progress >= 100) success(item);
+                        item.progress += 12; if(item.progress >= 100) success(item);
                     }
                 }
 
-                if(item.x > needleX + 80 && !item.hit && !item.processed) {
+                if(item.x > needleX + 90 && !item.hit && !item.processed) {
                     item.processed = true; fail();
                 }
             }
@@ -198,14 +205,14 @@
         score += (10 * currentMult);
         document.getElementById('score').innerText = score;
         document.getElementById('mult').innerText = currentMult + "x";
-        updateTicketUI(); // Refresh for next item
+        updateTicketUI();
     }
 
     function fail() {
         combo = 0; lives--; updateLivesUI();
         document.getElementById('mult').innerText = "1x";
         updateTicketUI();
-        if(lives <= 0) { gameActive = false; document.getElementById('overlay').style.display = 'flex'; document.getElementById('final-score').innerText = "UNITS PROCESSED: " + score; }
+        if(lives <= 0) { gameActive = false; document.getElementById('overlay').style.display = 'flex'; document.getElementById('final-score').innerText = "TOTAL BRANDED: " + score; }
     }
 
     updateLivesUI(); spawn(); draw();
